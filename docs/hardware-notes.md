@@ -22,7 +22,7 @@ MAX6675 CS  -> GPIO5
 
 ## Field Direction
 
-The project report identifies MAX31855 and STM32/LoRaWAN as future field-deployment directions for improved robustness and communication range. The current repository keeps the working prototype firmware and dashboard as the implementation baseline.
+Future field deployments can evaluate MAX31855 and STM32/LoRaWAN for improved robustness and communication range. The current repository keeps the working prototype firmware and dashboard as the implementation baseline.
 
 ## PCB Assets
 

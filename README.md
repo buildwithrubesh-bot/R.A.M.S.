@@ -24,7 +24,7 @@ R.A.M.S follows a layered IoT architecture:
 
 - Sensing layer: K-Type thermocouple with MAX6675/MAX31855 interface.
 - Processing layer: ESP32 prototype node, with STM32/LoRaWAN as a field-deployment direction.
-- Communication layer: WiFi + HTTP REST for prototype/backend communication.
+- Communication layer: WiFi and HTTP REST for prototype/backend communication.
 - Application layer: Supabase for prototype testing, PostgreSQL + Flask REST API for controlled deployment, and a web dashboard for monitoring.
 
 ## Features
@@ -76,5 +76,9 @@ software/dashboard/Frontend/index.html
 
 - docs/project-overview.md
 - docs/deployment.md
+- docs/api-reference.md
 - docs/hardware-notes.md
 
+## Collaboration
+
+See CONTRIBUTING.md for branch naming, pull request workflow, and team collaboration rules.
