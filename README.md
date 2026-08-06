@@ -78,16 +78,3 @@ software/dashboard/Frontend/index.html
 - docs/deployment.md
 - docs/hardware-notes.md
 
-## GitHub Upload
-
-Create an empty GitHub repository and run:
-
-```powershell
-cd "C:\Users\G RUBESH KUMAR\Documents\Railways Internship\Project_Finals\Rams-Github"
-git init
-git add .
-git commit -m "Initial R.A.M.S project repo"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-git push -u origin main
-```
