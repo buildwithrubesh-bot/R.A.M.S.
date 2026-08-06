@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R.A.M.S – Real-Time Axle-Box Monitoring System</title>
+  <meta name="description" content="Real-time IoT dashboard for monitoring railway axle temperatures across trains, coaches and axles." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js for trend charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <span class="logo-text">RAMS</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" title="Collapse sidebar">
+        <i data-lucide="panel-left-close"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a class="nav-item active" href="#" data-view="dashboard" id="nav-dashboard">
+        <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
+      </a>
+      <a class="nav-item" href="#" data-view="live" id="nav-live">
+        <i data-lucide="activity"></i><span>Live Monitor</span>
+        <span class="nav-badge" id="alertBadge">0</span>
+      </a>
+      <a class="nav-item" href="#" data-view="history" id="nav-history">
+        <i data-lucide="history"></i><span>History</span>
+      </a>
+      <a class="nav-item" href="#" data-view="alerts" id="nav-alerts">
+        <i data-lucide="bell-ring"></i><span>Alerts</span>
+      </a>
+
+      <div class="nav-section-label" style="margin-top:1.5rem">Analytics</div>
+      <a class="nav-item" href="#" data-view="analytics" id="nav-analytics">
+        <i data-lucide="bar-chart-3"></i><span>Analytics</span>
+      </a>
+      <a class="nav-item" href="#" data-view="submit" id="nav-submit">
+        <i data-lucide="upload"></i><span>Submit Reading</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="system-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main-wrapper" id="mainWrapper">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <span class="page-subtitle" id="pageSubtitle">Railway Axle Temperature Monitoring</span>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <i data-lucide="search"></i>
+          <input type="text" id="globalSearch" placeholder="Search train / coach / axle…" autocomplete="off" />
+        </div>
+        <button class="icon-btn" id="refreshBtn" title="Refresh data">
+          <i data-lucide="refresh-cw"></i>
+        </button>
+        <button class="icon-btn theme-toggle" id="themeToggle" title="Toggle theme">
+          <i data-lucide="sun" id="themeIconSun"></i>
+          <i data-lucide="moon" id="themeIconMoon" style="display:none"></i>
+        </button>
+        <div class="last-updated" id="lastUpdated">—</div>
+      </div>
+    </header>
+
+    <!-- ── Views ── -->
+    <main class="content">
+
+      <!-- ====== DASHBOARD ====== -->
+      <section class="view active" id="view-dashboard">
+        <!-- KPI cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-total">
+            <div class="kpi-icon normal"><i data-lucide="database"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Total Logs</div>
+              <div class="kpi-value" id="kpiTotal">—</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-normal">
+            <div class="kpi-icon normal"><i data-lucide="check-circle-2"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Normal</div>
+              <div class="kpi-value" id="kpiNormal">—</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-warning">
+            <div class="kpi-icon warning"><i data-lucide="alert-triangle"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Warning</div>
+              <div class="kpi-value" id="kpiWarning">—</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-critical">
+            <div class="kpi-icon critical"><i data-lucide="flame"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Critical</div>
+              <div class="kpi-value" id="kpiCritical">—</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-avg">
+            <div class="kpi-icon info"><i data-lucide="thermometer"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Avg Temperature</div>
+              <div class="kpi-value" id="kpiAvgTemp">—</div>
+            </div>
+          </div>
+          <div class="kpi-card" id="kpi-max">
+            <div class="kpi-icon critical"><i data-lucide="thermometer-sun"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">Peak Temperature</div>
+              <div class="kpi-value" id="kpiMaxTemp">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="charts-row">
+          <div class="card chart-card wide">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="trending-up"></i> Temperature Trend (Last Hour)</span>
+              <span class="card-meta" id="trendMeta">—</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card narrow">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="pie-chart"></i> Status Distribution</span>
+            </div>
+            <div class="chart-wrap donut-wrap">
+              <canvas id="donutChart"></canvas>
+            </div>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+
+        <!-- Latest readings table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i data-lucide="list"></i> Latest Readings (per Axle)</span>
+            <button class="text-btn" id="viewAllLatest">View all →</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="latestTable">
+              <thead>
+                <tr>
+                  <th>Train</th><th>Coach</th><th>Axle</th>
+                  <th>Temperature</th><th>Status</th><th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="latestTbody">
+                <tr><td colspan="6" class="loading-cell"><span class="spinner"></span> Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== LIVE MONITOR ====== -->
+      <section class="view" id="view-live">
+        <div class="live-header">
+          <div class="live-badge">
+            <span class="live-dot"></span> LIVE
+          </div>
+          <span class="live-meta">Auto-refreshes every <strong>10 s</strong></span>
+        </div>
+        <!-- Axle cards grid -->
+        <div class="axle-grid" id="axleGrid">
+          <div class="loading-placeholder"><span class="spinner"></span> Loading live data…</div>
+        </div>
+      </section>
+
+      <!-- ====== HISTORY ====== -->
+      <section class="view" id="view-history">
+        <!-- Filters -->
+        <div class="card filter-card">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="fTrain">Train ID</label>
+              <input type="text" id="fTrain" placeholder="e.g. TRAIN-101" />
+            </div>
+            <div class="filter-group">
+              <label for="fCoach">Coach ID</label>
+              <input type="text" id="fCoach" placeholder="e.g. C1" />
+            </div>
+            <div class="filter-group">
+              <label for="fAxle">Axle ID</label>
+              <input type="text" id="fAxle" placeholder="e.g. A1" />
+            </div>
+            <div class="filter-group">
+              <label for="fLimit">Limit</label>
+              <select id="fLimit">
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="applyHistoryFilter">
+              <i data-lucide="filter"></i> Apply
+            </button>
+            <button class="btn btn-ghost" id="clearHistoryFilter">Clear</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i data-lucide="history"></i> Temperature History</span>
+            <span class="card-meta" id="historyCount">0 records</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="historyTable">
+              <thead>
+                <tr>
+                  <th>#</th><th>Train</th><th>Coach</th><th>Axle</th>
+                  <th>Temperature</th><th>Status</th><th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="historyTbody">
+                <tr><td colspan="7" class="loading-cell"><span class="spinner"></span> Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== ALERTS ====== -->
+      <section class="view" id="view-alerts">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i data-lucide="bell-ring"></i> Active Alerts</span>
+            <span class="card-meta" id="alertsCount">0 alerts</span>
+          </div>
+          <div class="alerts-list" id="alertsList">
+            <div class="loading-placeholder"><span class="spinner"></span> Loading…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== ANALYTICS ====== -->
+      <section class="view" id="view-analytics">
+        <div class="analytics-grid">
+          <!-- Gauge card -->
+          <div class="card gauge-card">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="gauge"></i> System Health</span>
+            </div>
+            <div class="gauge-wrap">
+              <canvas id="gaugeCanvas" width="240" height="140"></canvas>
+              <div class="gauge-label" id="gaugeLabel">—</div>
+              <div class="gauge-sub" id="gaugeSub">Normal Rate</div>
+            </div>
+          </div>
+          <!-- Bar chart per train -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="bar-chart-2"></i> Readings by Status</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="statusBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trend full width -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <span class="card-title"><i data-lucide="area-chart"></i> Avg / Max Temperature Trend</span>
+          </div>
+          <div class="chart-wrap tall">
+            <canvas id="analyticsLineChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== SUBMIT READING ====== -->
+      <section class="view" id="view-submit">
+        <div class="submit-layout">
+          <div class="card submit-card">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="upload"></i> Submit Temperature Reading</span>
+            </div>
+            <form id="submitForm" class="submit-form" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sTrain">Train ID <span class="required">*</span></label>
+                  <input type="text" id="sTrain" placeholder="e.g. TRAIN-101" required />
+                </div>
+                <div class="form-group">
+                  <label for="sCoach">Coach ID <span class="required">*</span></label>
+                  <input type="text" id="sCoach" placeholder="e.g. C1" required />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sAxle">Axle ID <span class="required">*</span></label>
+                  <input type="text" id="sAxle" placeholder="e.g. A1" required />
+                </div>
+                <div class="form-group">
+                  <label for="sTemp">Temperature (°C) <span class="required">*</span></label>
+                  <input type="number" id="sTemp" placeholder="e.g. 65.5" step="0.1" required />
+                </div>
+              </div>
+              <!-- Preview -->
+              <div class="temp-preview" id="tempPreview" style="display:none">
+                <div class="preview-thermometer" id="previewTherm"></div>
+                <div class="preview-info">
+                  <span class="preview-val" id="previewVal">—°C</span>
+                  <span class="preview-status badge" id="previewStatus">—</span>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                <i data-lucide="send"></i> Submit Reading
+              </button>
+              <div class="form-feedback" id="formFeedback"></div>
+            </form>
+          </div>
+
+          <!-- Recent submissions -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i data-lucide="clock"></i> Recent Submissions</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="recentTable">
+                <thead>
+                  <tr><th>Train</th><th>Coach</th><th>Axle</th><th>Temp</th><th>Status</th><th>Time</th></tr>
+                </thead>
+                <tbody id="recentTbody">
+                  <tr><td colspan="6" class="empty-cell">No submissions yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

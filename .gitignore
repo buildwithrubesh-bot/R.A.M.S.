@@ -1,0 +1,44 @@
+# Environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*secret*
+*credentials*
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs and runtime output
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and cache folders
+dist/
+build/
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local database/export files
+*.sqlite
+*.db
+*.dump
